@@ -71,13 +71,21 @@ if symbols:
             st.warning("No se pudo graficar RSI")
 
         # Señales
-        data['Signal'] = 0
-        data.loc[
-            (data['SMA_Short'] > data['SMA_Long']) &
-            (data['RSI'] < rsi_upper) &
-            (data['RSI'] > rsi_lower),
-            'Signal'
-        ] = 1
+         data['Signal'] = 0
+         data.loc[
+        (data['SMA_Short'] > data['SMA_Long']) &
+        (data['RSI'] < rsi_upper) &
+        (data['RSI'] > rsi_lower),
+       'Signal'
+] = 1
+
+# Cálculo de retorno de la estrategia (CORREGIDO)
+data['Strategy_Return'] = data['Signal'].shift(1).fillna(0) * data['Close'].pct_change().fillna(0)
+
+# Continuar con lo siguiente...
+data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
+data['Portfolio_Value'] = initial_capital * data['Cumulative_Return']
+
         st.write(data[['Signal', 'Close']].head())
         
         signal = data['Signal'].shift(1).fillna(0)
