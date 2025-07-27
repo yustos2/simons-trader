@@ -73,10 +73,10 @@ if symbols:
         # Señales
          data['Signal'] = 0
          data.loc[
-        (data['SMA_Short'] > data['SMA_Long']) &
-        (data['RSI'] < rsi_upper) &
-        (data['RSI'] > rsi_lower),
-       'Signal'
+             (data['SMA_Short'] > data['SMA_Long']) &
+             (data['RSI'] < rsi_upper) &
+             (data['RSI'] > rsi_lower),
+             'Signal'
 ] = 1
 
 # Cálculo de retorno de la estrategia (CORREGIDO)
