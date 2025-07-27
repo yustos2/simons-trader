@@ -56,9 +56,10 @@ if symbols:
         ax.legend()
         st.pyplot(fig)
 
-        if 'Momentum' in data.columns:
+        if 'Momentum' in data.columns and not data['Momentum'].dropna().empty:
             st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
-        if 'RSI' in data.columns:
+
+        if 'RSI' in data.columns and not data['RSI'].dropna().empty:
             st.line_chart(data[['RSI']].dropna(), use_container_width=True)
 
         data['Signal'] = 0
