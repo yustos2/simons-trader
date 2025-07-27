@@ -44,9 +44,10 @@ if symbols:
         data['SMA_Long'] = data['Close'].rolling(window=sma_long_range).mean()
         data['Momentum'] = data['Close'] - data['Close'].shift(10)
 
+        # Cálculo de RSI
         delta = data['Close'].diff()
-        gain = np.where(delta > 0, delta, 0)
-        loss = np.where(delta < 0, -delta, 0)
+        gain = np.where(delta > 0, delta, 0).flatten()
+        loss = np.where(delta < 0, -delta, 0).flatten()
         avg_gain = pd.Series(gain, index=data.index).rolling(window=14).mean()
         avg_loss = pd.Series(loss, index=data.index).rolling(window=14).mean()
         rs = avg_gain / avg_loss
@@ -61,6 +62,7 @@ if symbols:
         ax.legend()
         st.pyplot(fig)
 
+        # Gráficos adicionales
         if 'Momentum' in data.columns:
             st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
 
@@ -76,7 +78,7 @@ if symbols:
             'Signal'
         ] = 1
 
-        # Calcular retornos
+        # Cálculo de retornos
         returns = data['Close'].pct_change().fillna(0)
         signal = data['Signal'].shift(1).fillna(0)
         strategy_return = signal * returns
@@ -88,8 +90,9 @@ if symbols:
 
         st.line_chart(data[['Portfolio_Value']].dropna(), use_container_width=True)
 
-        # Descargar datos
-        download_data = data[['Close', 'SMA_Short', 'SMA_Long', 'Momentum', 'RSI', 'Signal', 'Strategy_Return', 'Cumulative_Return', 'Portfolio_Value']].dropna()
+        # Descargar CSV
+        download_data = data[['Close', 'SMA_Short', 'SMA_Long', 'Momentum', 'RSI',
+                              'Signal', 'Strategy_Return', 'Cumulative_Return', 'Portfolio_Value']].dropna()
         csv = download_data.to_csv().encode('utf-8')
         st.download_button(
             label="📥 Descargar datos en CSV",
@@ -98,7 +101,7 @@ if symbols:
             mime='text/csv'
         )
 
-        # Señales
+        # Señal actual
         last_signal = data['Signal'].iloc[-1]
         if last_signal == 1:
             st.success("🔔 Señal ACTUAL de COMPRA basada en SMA y RSI optimizados")
