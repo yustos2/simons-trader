@@ -78,8 +78,10 @@ if symbols:
             (data['RSI'] > rsi_lower),
             'Signal'
         ] = 1
-
-        data['Strategy_Return'] = data['Signal'].shift(1) * data['Close'].pct_change()
+        st.write(data[['Signal', 'Close']].head())
+        
+        strategy_return = data['Signal'].shift(1).fillna(0) * data['Close'].pct_change().fillna(0)
+        data['Strategy_Return'] = strategy_return
         data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
         data['Portfolio_Value'] = initial_capital * data['Cumulative_Return']
 
