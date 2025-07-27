@@ -56,7 +56,9 @@ if symbols:
         ax.legend()
         st.pyplot(fig)
 
+        if 'Momentum' in data.columns:
         st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
+        if 'RSI' in data.columns:
         st.line_chart(data[['RSI']].dropna(), use_container_width=True)
 
         # Señal combinada SMA y RSI con parámetros ajustables
