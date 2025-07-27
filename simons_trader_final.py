@@ -4,10 +4,11 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Configuracion de la pagina
 st.set_page_config(layout="wide")
 st.title("Sistema de Trading Estilo Jim Simons")
 
-# Lista de acciones sugeridas
+# Lista de activos sugeridos
 default_symbols = [
     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META',
     'NVDA', 'TSLA', 'NFLX', 'JPM', 'BAC',
@@ -15,12 +16,7 @@ default_symbols = [
     'XOM', 'CVX', 'BABA', 'INTC', 'AMD'
 ]
 
-symbols = st.multiselect(
-    "Selecciona hasta 20 acciones para analizar:",
-    default_symbols,
-    default=default_symbols[:5],
-    max_selections=20
-)
+symbols = st.multiselect("Selecciona hasta 20 acciones para analizar:", default_symbols, default=default_symbols[:5], max_selections=20)
 
 if symbols:
     start_date = st.date_input("Fecha de inicio", value=pd.to_datetime("2023-01-01"))
@@ -44,16 +40,15 @@ if symbols:
         data['SMA_Long'] = data['Close'].rolling(window=sma_long_range).mean()
         data['Momentum'] = data['Close'] - data['Close'].shift(10)
 
-        # Cálculo de RSI
         delta = data['Close'].diff()
-        gain = np.where(delta > 0, delta, 0).flatten()
-        loss = np.where(delta < 0, -delta, 0).flatten()
+        gain = np.where(delta > 0, delta, 0)
+        loss = np.where(delta < 0, -delta, 0)
+
         avg_gain = pd.Series(gain, index=data.index).rolling(window=14).mean()
         avg_loss = pd.Series(loss, index=data.index).rolling(window=14).mean()
         rs = avg_gain / avg_loss
         data['RSI'] = 100 - (100 / (1 + rs))
 
-        # Gráfico de precios y medias móviles
         fig, ax = plt.subplots(figsize=(12, 4))
         ax.plot(data['Close'], label='Cierre')
         ax.plot(data['SMA_Short'], label=f'SMA {sma_short_range}')
@@ -62,50 +57,30 @@ if symbols:
         ax.legend()
         st.pyplot(fig)
 
-        # Gráficos adicionales
         if 'Momentum' in data.columns:
             st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
 
         if 'RSI' in data.columns:
             st.line_chart(data[['RSI']].dropna(), use_container_width=True)
 
-        # Estrategia
         data['Signal'] = 0
-        data.loc[
-            (data['SMA_Short'] > data['SMA_Long']) &
-            (data['RSI'] < rsi_upper) &
-            (data['RSI'] > rsi_lower),
-            'Signal'
-        ] = 1
+        data.loc[(data['SMA_Short'] > data['SMA_Long']) & (data['RSI'] < rsi_upper) & (data['RSI'] > rsi_lower), 'Signal'] = 1
 
-        # Cálculo de retornos
-        returns = data['Close'].pct_change().fillna(0)
-        signal = data['Signal'].shift(1).fillna(0)
-        strategy_return = signal * returns
-        strategy_return = strategy_return.reindex(data.index).fillna(0)
-
-        data['Strategy_Return'] = strategy_return
+        data['Strategy_Return'] = data['Signal'].shift(1).fillna(0) * data['Close'].pct_change().fillna(0)
         data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
         data['Portfolio_Value'] = initial_capital * data['Cumulative_Return']
 
-        if 'Momentum' in data.columns and not data['Momentum'].dropna().empty:
-             st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
-        else:
-             st.info("Sin datos suficientes para mostrar el Momentum.")
+        st.line_chart(data[['Portfolio_Value']].dropna(), use_container_width=True)
 
-
-        # Descargar CSV
-        download_data = data[['Close', 'SMA_Short', 'SMA_Long', 'Momentum', 'RSI',
-                              'Signal', 'Strategy_Return', 'Cumulative_Return', 'Portfolio_Value']].dropna()
+        download_data = data[['Close', 'SMA_Short', 'SMA_Long', 'Momentum', 'RSI', 'Signal', 'Strategy_Return', 'Cumulative_Return', 'Portfolio_Value']].dropna()
         csv = download_data.to_csv().encode('utf-8')
         st.download_button(
-            label="📥 Descargar datos en CSV",
+            label="📅 Descargar datos en CSV",
             data=csv,
             file_name=f'{symbol}_estrategia.csv',
             mime='text/csv'
         )
 
-        # Señal actual
         last_signal = data['Signal'].iloc[-1]
         if last_signal == 1:
             st.success("🔔 Señal ACTUAL de COMPRA basada en SMA y RSI optimizados")
