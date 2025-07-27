@@ -88,7 +88,11 @@ if symbols:
         data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
         data['Portfolio_Value'] = initial_capital * data['Cumulative_Return']
 
-        st.line_chart(data[['Portfolio_Value']].dropna(), use_container_width=True)
+        if 'Momentum' in data.columns and not data['Momentum'].dropna().empty:
+    st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
+else:
+    st.info("Sin datos suficientes para mostrar el Momentum.")
+
 
         # Descargar CSV
         download_data = data[['Close', 'SMA_Short', 'SMA_Long', 'Momentum', 'RSI',
