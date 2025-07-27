@@ -77,7 +77,7 @@ if symbols:
              (data['RSI'] < rsi_upper) &
              (data['RSI'] > rsi_lower),
              'Signal'
-] = 1
+         ] = 1
 
 # Cálculo de retorno de la estrategia (CORREGIDO)
 data['Strategy_Return'] = data['Signal'].shift(1).fillna(0) * data['Close'].pct_change().fillna(0)
