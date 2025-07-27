@@ -41,11 +41,11 @@ if symbols:
         data['Momentum'] = data['Close'] - data['Close'].shift(10)
 
         delta = data['Close'].diff()
-        gain = np.where(delta > 0, delta, 0)
-        loss = np.where(delta < 0, -delta, 0)
+        gain = delta.clip(lower=0)
+        loss = -delta.clip(upper=0)
+        avg_gain = gain.rolling(window=14).mean()
+        avg_loss = loss.rolling(window=14).mean()
 
-        avg_gain = pd.Series(gain, index=data.index).rolling(window=14).mean()
-        avg_loss = pd.Series(loss, index=data.index).rolling(window=14).mean()
         rs = avg_gain / avg_loss
         data['RSI'] = 100 - (100 / (1 + rs))
 
