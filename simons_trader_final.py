@@ -89,9 +89,9 @@ if symbols:
         data['Portfolio_Value'] = initial_capital * data['Cumulative_Return']
 
         if 'Momentum' in data.columns and not data['Momentum'].dropna().empty:
-    st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
-else:
-    st.info("Sin datos suficientes para mostrar el Momentum.")
+             st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
+        else:
+             st.info("Sin datos suficientes para mostrar el Momentum.")
 
 
         # Descargar CSV
