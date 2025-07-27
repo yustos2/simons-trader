@@ -95,4 +95,16 @@ if symbols:
             label="📥 Descargar datos en CSV",
             data=csv,
             file_name=f'{symbol}_estrategia.csv',
-            mime='text/c
+            mime='text/csv'
+        )
+
+        # Señales
+        last_signal = data['Signal'].iloc[-1]
+        if last_signal == 1:
+            st.success("🔔 Señal ACTUAL de COMPRA basada en SMA y RSI optimizados")
+        else:
+            st.info("📉 Sin señal de compra en este momento")
+
+        st.markdown("---")
+else:
+    st.info("Selecciona al menos una acción para comenzar.")
