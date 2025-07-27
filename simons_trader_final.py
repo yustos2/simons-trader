@@ -71,9 +71,8 @@ if symbols:
             st.warning("No se pudo graficar RSI")
 
         # Señales
-        
-         data['Signal'] = 0
-         data.loc[
+          data['Signal'] = 0
+          data.loc[
              (data['SMA_Short'] > data['SMA_Long']) &
              (data['RSI'] < rsi_upper) &
              (data['RSI'] > rsi_lower),
