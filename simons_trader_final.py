@@ -80,8 +80,11 @@ if symbols:
         ] = 1
         st.write(data[['Signal', 'Close']].head())
         
-        strategy_return = data['Signal'].shift(1).fillna(0) * data['Close'].pct_change().fillna(0)
+        signal = data['Signal'].shift(1).fillna(0)
+        returns = data['Close'].pct_change().fillna(0)
+        strategy_return = pd.Series(signal.values * returns.values, index=data.index)
         data['Strategy_Return'] = strategy_return
+
         data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
         data['Portfolio_Value'] = initial_capital * data['Cumulative_Return']
 
