@@ -62,14 +62,13 @@ if symbols:
             st.line_chart(momentum_chart_data.set_index('Date'), use_container_width=True)
 
         rsi_chart_data = data[['RSI']].dropna()
-if not rsi_chart_data.empty and 'RSI' in rsi_chart_data.columns:
-    rsi_chart_data = rsi_chart_data.reset_index()
-    st.line_chart(rsi_chart_data.set_index('Date'), use_container_width=True)
+        if not rsi_chart_data.empty and 'RSI' in rsi_chart_data.columns:
+            rsi_chart_data = rsi_chart_data.reset_index()
+            st.line_chart(rsi_chart_data.set_index('Date'), use_container_width=True)
 
 
         data['Signal'] = 0
         data.loc[(data['SMA_Short'] > data['SMA_Long']) & (data['RSI'] < rsi_upper) & (data['RSI'] > rsi_lower), 'Signal'] = 1
-
         data['Strategy_Return'] = data['Signal'].shift(1) * data['Close'].pct_change()
         data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
         data['Portfolio_Value'] = initial_capital * data['Cumulative_Return']
