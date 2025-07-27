@@ -56,10 +56,16 @@ if symbols:
         ax.legend()
         st.pyplot(fig)
 
-        if 'Momentum' in data.columns and not data['Momentum'].dropna().empty:
-            st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
-        if 'RSI' in data.columns and not data['RSI'].dropna().empty:
-            st.line_chart(data[['RSI']].dropna(), use_container_width=True)
+        momentum_chart_data = data[['Momentum']].dropna()
+        if not momentum_chart_data.empty and 'Momentum' in momentum_chart_data.columns:
+            momentum_chart_data = momentum_chart_data.reset_index()  # Asegura índice plano
+            st.line_chart(momentum_chart_data.set_index('Date'), use_container_width=True)
+
+        rsi_chart_data = data[['RSI']].dropna()
+if not rsi_chart_data.empty and 'RSI' in rsi_chart_data.columns:
+    rsi_chart_data = rsi_chart_data.reset_index()
+    st.line_chart(rsi_chart_data.set_index('Date'), use_container_width=True)
+
 
         data['Signal'] = 0
         data.loc[(data['SMA_Short'] > data['SMA_Long']) & (data['RSI'] < rsi_upper) & (data['RSI'] > rsi_lower), 'Signal'] = 1
