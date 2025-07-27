@@ -1,12 +1,13 @@
+import streamlit as st
 import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
 import numpy as np
-import streamlit as st
 
 st.set_page_config(layout="wide")
 st.title("Sistema de Trading Estilo Jim Simons")
 
+# Lista de acciones sugeridas
 default_symbols = [
     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META',
     'NVDA', 'TSLA', 'NFLX', 'JPM', 'BAC',
@@ -14,7 +15,12 @@ default_symbols = [
     'XOM', 'CVX', 'BABA', 'INTC', 'AMD'
 ]
 
-symbols = st.multiselect("Selecciona hasta 20 acciones para analizar:", default_symbols, default=default_symbols[:5], max_selections=20)
+symbols = st.multiselect(
+    "Selecciona hasta 20 acciones para analizar:",
+    default_symbols,
+    default=default_symbols[:5],
+    max_selections=20
+)
 
 if symbols:
     start_date = st.date_input("Fecha de inicio", value=pd.to_datetime("2023-01-01"))
@@ -28,8 +34,8 @@ if symbols:
 
     for symbol in symbols:
         st.subheader(f"Análisis de {symbol}")
-        data = yf.download(symbol, start=start_date, end=end_date)
 
+        data = yf.download(symbol, start=start_date, end=end_date)
         if data.empty:
             st.warning(f"No se encontraron datos para {symbol}")
             continue
@@ -39,13 +45,14 @@ if symbols:
         data['Momentum'] = data['Close'] - data['Close'].shift(10)
 
         delta = data['Close'].diff()
-        gain = delta.clip(lower=0)
-        loss = -delta.clip(upper=0)
-        avg_gain = gain.rolling(window=14).mean()
-        avg_loss = loss.rolling(window=14).mean()
+        gain = np.where(delta > 0, delta, 0)
+        loss = np.where(delta < 0, -delta, 0)
+        avg_gain = pd.Series(gain, index=data.index).rolling(window=14).mean()
+        avg_loss = pd.Series(loss, index=data.index).rolling(window=14).mean()
         rs = avg_gain / avg_loss
         data['RSI'] = 100 - (100 / (1 + rs))
 
+        # Gráfico de precios y medias móviles
         fig, ax = plt.subplots(figsize=(12, 4))
         ax.plot(data['Close'], label='Cierre')
         ax.plot(data['SMA_Short'], label=f'SMA {sma_short_range}')
@@ -54,24 +61,13 @@ if symbols:
         ax.legend()
         st.pyplot(fig)
 
-        # Gráfico de Momentum
-        try:
-            if 'Momentum' in data.columns:
-                momentum_chart_data = data[['Momentum']].dropna()
-                st.line_chart(momentum_chart_data)
-        except:
-            st.warning("No se pudo graficar Momentum")
+        if 'Momentum' in data.columns:
+            st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
 
-        # Gráfico de RSI
-        try:
-            if 'RSI' in data.columns:
-                rsi_chart_data = data[['RSI']].dropna()
-                st.line_chart(rsi_chart_data)
-        except:
-            st.warning("No se pudo graficar RSI")
+        if 'RSI' in data.columns:
+            st.line_chart(data[['RSI']].dropna(), use_container_width=True)
 
-        # Señales
-                 # Señales de compra
+        # Estrategia
         data['Signal'] = 0
         data.loc[
             (data['SMA_Short'] > data['SMA_Long']) &
@@ -80,40 +76,23 @@ if symbols:
             'Signal'
         ] = 1
 
-        # Cálculo de retornos de la estrategia
-        data['Strategy_Return'] = data['Signal'].shift(1).fillna(0) * data['Close'].pct_change().fillna(0)
-        data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
-        data['Portfolio_Value'] = initial_capital * data['Cumulative_Return']
-
-        st.write(data[['Signal', 'Close']].head())
-        
-        signal = data['Signal'].shift(1).fillna(0)
+        # Calcular retornos
         returns = data['Close'].pct_change().fillna(0)
-        strategy_return = pd.Series(signal.values * returns.values, index=data.index)
-        data['Strategy_Return'] = strategy_return
+        signal = data['Signal'].shift(1).fillna(0)
+        strategy_return = signal * returns
+        strategy_return = strategy_return.reindex(data.index).fillna(0)
 
+        data['Strategy_Return'] = strategy_return
         data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
         data['Portfolio_Value'] = initial_capital * data['Cumulative_Return']
 
         st.line_chart(data[['Portfolio_Value']].dropna(), use_container_width=True)
 
-        # Botón para descargar CSV
-        download_data = data[['Close', 'SMA_Short', 'SMA_Long', 'Momentum', 'RSI',
-                              'Signal', 'Strategy_Return', 'Cumulative_Return', 'Portfolio_Value']].dropna()
+        # Descargar datos
+        download_data = data[['Close', 'SMA_Short', 'SMA_Long', 'Momentum', 'RSI', 'Signal', 'Strategy_Return', 'Cumulative_Return', 'Portfolio_Value']].dropna()
         csv = download_data.to_csv().encode('utf-8')
         st.download_button(
             label="📥 Descargar datos en CSV",
             data=csv,
             file_name=f'{symbol}_estrategia.csv',
-            mime='text/csv'
-        )
-
-        last_signal = data['Signal'].iloc[-1]
-        if last_signal == 1:
-            st.success("🔔 Señal ACTUAL de COMPRA basada en SMA y RSI optimizados")
-        else:
-            st.info("📉 Sin señal de compra en este momento")
-
-        st.markdown("---")
-else:
-    st.info("Selecciona al menos una acción para comenzar.")
+            mime='text/c
