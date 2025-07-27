@@ -43,7 +43,6 @@ if symbols:
         loss = -delta.clip(upper=0)
         avg_gain = gain.rolling(window=14).mean()
         avg_loss = loss.rolling(window=14).mean()
-
         rs = avg_gain / avg_loss
         data['RSI'] = 100 - (100 / (1 + rs))
 
@@ -55,16 +54,30 @@ if symbols:
         ax.legend()
         st.pyplot(fig)
 
-        # Graficar Momentum y RSI si existen
-        if 'Momentum' in data.columns:
-            st.line_chart(data[['Momentum']].dropna(), use_container_width=True)
+        # Gráfico de Momentum
+        try:
+            if 'Momentum' in data.columns:
+                momentum_chart_data = data[['Momentum']].dropna()
+                st.line_chart(momentum_chart_data)
+        except:
+            st.warning("No se pudo graficar Momentum")
 
-        if 'RSI' in data.columns:
-            st.line_chart(data[['RSI']].dropna(), use_container_width=True)
+        # Gráfico de RSI
+        try:
+            if 'RSI' in data.columns:
+                rsi_chart_data = data[['RSI']].dropna()
+                st.line_chart(rsi_chart_data)
+        except:
+            st.warning("No se pudo graficar RSI")
 
         # Señales
         data['Signal'] = 0
-        data.loc[(data['SMA_Short'] > data['SMA_Long']) & (data['RSI'] < rsi_upper) & (data['RSI'] > rsi_lower), 'Signal'] = 1
+        data.loc[
+            (data['SMA_Short'] > data['SMA_Long']) &
+            (data['RSI'] < rsi_upper) &
+            (data['RSI'] > rsi_lower),
+            'Signal'
+        ] = 1
 
         data['Strategy_Return'] = data['Signal'].shift(1) * data['Close'].pct_change()
         data['Cumulative_Return'] = (1 + data['Strategy_Return']).cumprod()
@@ -72,8 +85,9 @@ if symbols:
 
         st.line_chart(data[['Portfolio_Value']].dropna(), use_container_width=True)
 
-        # Botón para descargar
-        download_data = data[['Close', 'SMA_Short', 'SMA_Long', 'Momentum', 'RSI', 'Signal', 'Strategy_Return', 'Cumulative_Return', 'Portfolio_Value']].dropna()
+        # Botón para descargar CSV
+        download_data = data[['Close', 'SMA_Short', 'SMA_Long', 'Momentum', 'RSI',
+                              'Signal', 'Strategy_Return', 'Cumulative_Return', 'Portfolio_Value']].dropna()
         csv = download_data.to_csv().encode('utf-8')
         st.download_button(
             label="📥 Descargar datos en CSV",
@@ -82,7 +96,6 @@ if symbols:
             mime='text/csv'
         )
 
-        # Alerta de señal
         last_signal = data['Signal'].iloc[-1]
         if last_signal == 1:
             st.success("🔔 Señal ACTUAL de COMPRA basada en SMA y RSI optimizados")
